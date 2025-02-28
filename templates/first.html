@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Q&A with Gemini</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #4F46E5;
+            --primary-hover: #4338CA;
+            --bg-color: #1a1a2e;
+            --card-bg: #16213e;
+            --text-color: #e2e8f0;
+            --border-color: #30365c;
+            --success-color: #10B981;
+            --error-color: #EF4444;
+            --font-size: 16px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.5;
+            font-size: var(--font-size);
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding: 2rem;
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .header h1 {
+            color: var(--primary-color);
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .header p {
+            color: #94a3b8;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+            margin-bottom: 1.5rem;
+            border: 1px solid var(--border-color);
+        }
+
+        .upload-zone {
+            border: 2px dashed var(--border-color);
+            border-radius: 8px;
+            padding: 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .upload-zone:hover {
+            border-color: var(--primary-color);
+            background-color: rgba(79, 70, 229, 0.1);
+        }
+
+        .upload-zone.drag-over {
+            border-color: var(--primary-color);
+            background-color: rgba(79, 70, 229, 0.2);
+        }
+
+        .controls {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 1rem;
+            border-radius: 8px;
+        }
+
+        .font-controls {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .control-btn {
+            padding: 0.5rem;
+            border: none;
+            border-radius: 4px;
+            background: var(--primary-color);
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .control-btn:hover {
+            background: var(--primary-hover);
+        }
+
+        .color-picker {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .color-picker input[type="color"] {
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin-top: 1rem;
+            min-height: 300px;
+            max-height: 500px;
+            overflow-y: auto;
+            padding: 1rem;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+        }
+
+        .message {
+            padding: 1rem;
+            border-radius: 8px;
+            max-width: 80%;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .user-message {
+            background-color: var(--primary-color);
+            color: white;
+            align-self: flex-end;
+        }
+
+        .bot-message {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: var(--text-color);
+            align-self: flex-start;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+            position: relative;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 1rem;
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-color);
+            transition: all 0.3s ease;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.3);
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-hover);
+            transform: translateY(-1px);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .status {
+            margin-top: 1rem;
+            padding: 0.75rem;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .status.success {
+            background-color: rgba(16, 185, 129, 0.2);
+            color: var(--success-color);
+        }
+
+        .status.error {
+            background-color: rgba(239, 68, 68, 0.2);
+            color: var(--error-color);
+        }
+
+        .typing-indicator {
+            display: flex;
+            gap: 0.5rem;
+            padding: 1rem;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            align-self: flex-start;
+            align-items: center;
+        }
+
+        .typing-icon {
+            font-size: 1.5rem;
+            color: var(--primary-color);
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.4; }
+            100% { opacity: 1; }
+        }
+
+        @media (max-width: 640px) {
+            .container { margin: 1rem auto; }
+            .header h1 { font-size: 2rem; }
+            .message { max-width: 90%; }
+            .controls { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1><i class="fas fa-robot"></i> PDF Q&A with Gemini</h1>
+            <p>Upload a PDF and ask questions about its content</p>
+        </header>
+
+        <div class="card">
+            <div class="upload-zone" id="uploadZone">
+                <i class="fas fa-cloud-upload-alt fa-3x" style="color: var(--primary-color); margin-bottom: 1rem;"></i>
+                <p>Drag & drop your PDF here or <span style="color: var(--primary-color); text-decoration: underline;">browse</span></p>
+                <input type="file" id="fileInput" class="file-input" accept=".pdf">
+            </div>
+            <div id="uploadStatus" class="status" style="display: none;"></div>
+        </div>
+
+        <div class="card">
+            <div class="controls">
+                <div class="font-controls">
+                    <button class="control-btn" onclick="changeFontSize('decrease')">
+                        <i class="fas fa-minus"></i>
+                    </button>
+                    <span id="fontSizeDisplay">16px</span>
+                    <button class="control-btn" onclick="changeFontSize('increase')">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                </div>
+                <div class="color-picker">
+                    <label for="textColor"><i class="fas fa-palette"></i> Answer Color:</label>
+                    <input type="color" id="textColor" value="#e2e8f0" onchange="changeTextColor(this.value)">
+                </div>
+            </div>
+
+            <div id="chatContainer" class="chat-container">
+                <!-- Chat messages will be inserted here -->
+            </div>
+            <div class="input-group">
+                <input type="text" id="questionInput" placeholder="Ask a question about the PDF..." disabled>
+                <button id="askButton" class="btn btn-primary" disabled>
+                    <i class="fas fa-paper-plane"></i> Ask
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const SERVER_URL = 'http://127.0.0.1:5000';
+        const uploadZone = document.getElementById('uploadZone');
+        const fileInput = document.getElementById('fileInput');
+        const uploadStatus = document.getElementById('uploadStatus');
+        const chatContainer = document.getElementById('chatContainer');
+        const questionInput = document.getElementById('questionInput');
+        const askButton = document.getElementById('askButton');
+        let pdfUploaded = false;
+        let currentFontSize = 16;
+
+        function changeFontSize(action) {
+            if (action === 'increase') {
+                currentFontSize = Math.min(currentFontSize + 2, 24);
+            } else {
+                currentFontSize = Math.max(currentFontSize - 2, 12);
+            }
+            document.documentElement.style.setProperty('--font-size', `${currentFontSize}px`);
+            document.getElementById('fontSizeDisplay').textContent = `${currentFontSize}px`;
+        }
+
+        function changeTextColor(color) {
+            const botMessages = document.querySelectorAll('.bot-message');
+            botMessages.forEach(msg => msg.style.color = color);
+        }
+
+        // Drag and drop handlers
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            uploadZone.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            uploadZone.addEventListener(eventName, () => {
+                uploadZone.classList.add('drag-over');
+            });
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            uploadZone.addEventListener(eventName, () => {
+                uploadZone.classList.remove('drag-over');
+            });
+        });
+
+        uploadZone.addEventListener('drop', handleDrop);
+        uploadZone.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', handleFileSelect);
+
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            handleFiles(files);
+        }
+
+        function handleFileSelect(e) {
+            const files = e.target.files;
+            handleFiles(files);
+        }
+
+        async function handleFiles(files) {
+            if (files.length === 0) return;
+            
+            const file = files[0];
+            if (!file.type.includes('pdf')) {
+                showStatus('Please upload a PDF file', 'error');
+                return;
+            }
+
+            showStatus('Uploading and processing PDF...', 'info');
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const response = await fetch(`${SERVER_URL}/upload`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+                if (response.ok) {
+                    showStatus('PDF uploaded successfully!', 'success');
+                    pdfUploaded = true;
+                    questionInput.disabled = false;
+                    askButton.disabled = false;
+                    addBotMessage('Hi! I\'ve processed your PDF. What would you like to know about it?');
+                } else {
+                    showStatus(result.error || 'Upload failed', 'error');
+                }
+            } catch (error) {
+                showStatus('Error uploading file: ' + error.message, 'error');
+            }
+        }
+
+        function showStatus(message, type) {
+            uploadStatus.textContent = message;
+            uploadStatus.className = `status ${type}`;
+            uploadStatus.style.display = 'block';
+        }
+
+        function addMessage(content, isUser) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isUser ? 'user-message' : 'bot-message'}`;
+            messageDiv.textContent = content;
+            if (!isUser) {
+                messageDiv.style.color = document.getElementById('textColor').value;
+            }
+            chatContainer.appendChild(messageDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        function addBotMessage(content) {
+            addMessage(content, false);
+        }
+
+        function addUserMessage(content) {
+            addMessage(content, true);
+        }
+
+        function showTypingIndicator() {
+            const indicator = document.createElement('div');
+            indicator.className = 'typing-indicator';
+            indicator.innerHTML = '<i class="fas fa-robot typing-icon"></i> AI is thinking...';
+            indicator.id = 'typingIndicator';
+            chatContainer.appendChild(indicator);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        function removeTypingIndicator() {
+            const indicator = document.getElementById('typingIndicator');
+            if (indicator) {
+                indicator.remove();
+            }
+        }
+
+        askButton.addEventListener('click', async () => {
+            const question = questionInput.value.trim();
+            if (!question) return;
+
+            addUserMessage(question);
+            questionInput.value = '';
+            showTypingIndicator();
+
+            try {
+                const response = await fetch(`${SERVER_URL}/query`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ question })
+                });
+
+                const result = await response.json();
+                removeTypingIndicator();
+                
+                if (response.ok) {
+                    addBotMessage(result.answer);
+                } else {
+                    addBotMessage('Sorry, I encountered an error: ' + result.error);
+                }
+            } catch (error) {
+                removeTypingIndicator();
+                addBotMessage('Sorry, I encountered an error: ' + error.message);
+            }
+        });
+
+        questionInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                askButton.click();
+            }
+        });
+    </script>
+</body>
+</html>
